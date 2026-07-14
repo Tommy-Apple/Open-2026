@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Open Championship 2026 — Fantasy Draft</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a1628; color: #faf7f0; font-family: Georgia, serif; min-height: 100vh; }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(100,149,237,0.3); flex-wrap: wrap; gap: 8px; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo-title { font-size: 17px; font-weight: 700; color: #6495ed; line-height: 1.2; }
+  .logo-sub { font-size: 12px; color: #6b7b6e; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .share-btn { background: rgba(100,149,237,0.15); border: 1px solid #6495ed; color: #6495ed; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .share-btn.copied { background: rgba(45,155,90,0.2); border-color: #2d9b5a; color: #2d9b5a; }
+
+  .clock-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: linear-gradient(90deg, rgba(100,149,237,0.2), rgba(100,149,237,0.05)); border-bottom: 1px solid rgba(100,149,237,0.25); flex-wrap: wrap; gap: 10px; }
+  .clock-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .clock-dot { width: 10px; height: 10px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 8px #4ade80; }
+  .clock-label { font-size: 11px; color: #4ade80; letter-spacing: 2px; font-weight: 700; }
+  .clock-team { font-size: 18px; font-weight: 700; }
+  .clock-info { font-size: 12px; color: #6b7b6e; }
+  .clock-right { display: flex; align-items: center; gap: 10px; }
+  .notify-link { background: rgba(100,149,237,0.15); border: 1px solid #6495ed; color: #6495ed; border-radius: 8px; padding: 8px 14px; font-size: 13px; text-decoration: none; }
+  .pick-btn { background: linear-gradient(135deg, #1a3a6b, #2a5aab); border: none; color: #fff; border-radius: 8px; padding: 8px 18px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .done-banner { padding: 12px 24px; background: linear-gradient(90deg, rgba(100,149,237,0.15), rgba(100,149,237,0.03)); border-bottom: 1px solid rgba(100,149,237,0.2); color: #6495ed; font-weight: 700; font-size: 14px; text-align: center; }
+  .sms-bar { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: rgba(100,149,237,0.08); border-bottom: 1px solid rgba(100,149,237,0.15); font-size: 14px; flex-wrap: wrap; }
+  .sms-open { background: #1a3a6b; color: #fff; border-radius: 6px; padding: 5px 12px; text-decoration: none; font-size: 13px; }
+  .sms-x { background: transparent; border: none; color: #6b7b6e; cursor: pointer; font-size: 16px; font-family: inherit; }
+
+  .tabs { display: flex; padding: 0 20px; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); overflow-x: auto; }
+  .tab { background: transparent; border: none; border-bottom: 2px solid transparent; color: #6b7b6e; padding: 12px 18px; font-size: 13px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .tab.active { color: #6495ed; border-bottom-color: #6495ed; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Scoreboard */
+  .legend { display: flex; gap: 16px; padding: 8px 20px; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.15); font-size: 11px; color: #6b7b6e; }
+  .score-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; padding: 16px; }
+  .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; }
+  .card.first { border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.03); }
+  .card-hdr { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .rank { font-size: 20px; width: 32px; text-align: center; flex-shrink: 0; }
+  .tmeta { flex: 1; }
+  .tname { font-weight: 700; font-size: 14px; }
+  .cut-warn { font-size: 10px; color: #6495ed; margin-top: 2px; }
+  .sbox { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .tscore { font-size: 24px; font-weight: 700; }
+  .slabel { font-size: 9px; color: #6b7b6e; letter-spacing: 1px; }
+  .bonus-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #6b7b6e; border-radius: 4px; padding: 2px 7px; font-size: 10px; cursor: pointer; font-family: inherit; }
+  .bonus-btn.on { background: rgba(100,149,237,0.2); border-color: #6495ed; color: #6495ed; }
+  .grows { padding: 4px 0; }
+  .grow { display: flex; justify-content: space-between; align-items: center; padding: 5px 14px; border-bottom: 1px solid rgba(255,255,255,0.03); opacity: 0.55; }
+  .grow.counts { opacity: 1; background: rgba(100,149,237,0.06); }
+  .grow.faded { opacity: 0.3; }
+  .gleft { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .cdot { color: #4ade80; font-size: 8px; }
+  .gright { display: flex; align-items: center; gap: 8px; }
+  .gscore { font-size: 14px; font-weight: 700; }
+  .gthru { font-size: 10px; color: #6b7b6e; }
+  .gpos { font-size: 10px; color: #6495ed; }
+  .mc { font-size: 10px; background: rgba(224,82,82,0.2); color: #e05252; border: 1px solid #e05252; border-radius: 3px; padding: 1px 5px; }
+  .wd { font-size: 10px; background: rgba(107,123,110,0.2); color: #6b7b6e; border: 1px solid #6b7b6e; border-radius: 3px; padding: 1px 5px; }
+  .sfooter { text-align: center; padding: 14px 20px; font-size: 11px; color: #6b7b6e; border-top: 1px solid rgba(255,255,255,0.05); }
+  .green { color: #4ade80; } .red { color: #e05252; }
+
+  /* Board */
+  .twrap { overflow-x: auto; padding: 16px 8px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 900px; }
+  th { padding: 8px 6px; color: #6495ed; font-weight: 700; text-align: center; background: rgba(0,0,0,0.2); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90px; }
+  th.rdh { color: #6b7b6e; width: 36px; }
+  td { padding: 5px 4px; text-align: center; border: 1px solid rgba(255,255,255,0.04); min-width: 80px; max-width: 90px; }
+  tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+  .pname { color: #faf7f0; font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 88px; }
+  .emp { color: rgba(255,255,255,0.1); font-size: 10px; }
+  .filled { background: rgba(26,58,107,0.25); }
+  .onclock { background: rgba(100,149,237,0.12); border: 1px solid rgba(100,149,237,0.35) !important; }
+
+  /* Rosters */
+  .rgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; padding: 16px; }
+  .rcard { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; }
+  .rhdr { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(26,58,107,0.25); border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .rnum { color: #6495ed; font-weight: 700; font-size: 12px; }
+  .rname { flex: 1; color: #faf7f0; font-weight: 700; font-size: 13px; }
+  .rcnt { color: #6b7b6e; font-size: 11px; }
+  .rpicks { padding: 8px 14px; max-height: 220px; overflow-y: auto; }
+  .rpick { display: flex; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .prd { color: #6b7b6e; font-size: 10px; width: 24px; flex-shrink: 0; }
+  .pgolfer { color: #faf7f0; font-size: 12px; }
+
+  /* Rules */
+  .rwrap { padding: 20px; max-width: 640px; margin: 0 auto; }
+  .rulecard { background: rgba(255,255,255,0.03); border: 1px solid rgba(100,149,237,0.2); border-radius: 14px; overflow: hidden; }
+  .ruletitle { padding: 16px 24px; font-size: 18px; font-weight: 700; color: #6495ed; border-bottom: 1px solid rgba(255,255,255,0.07); background: rgba(100,149,237,0.07); }
+  .ruleitem { display: flex; gap: 16px; padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .ricon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+  .rheading { color: #faf7f0; font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .rtext { color: #6b7b6e; font-size: 14px; line-height: 1.6; }
+
+  /* Picker */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+  .modal { background: #0d1e35; border: 1px solid rgba(100,149,237,0.3); border-radius: 14px; padding: 24px; width: 100%; max-width: 480px; max-height: 85vh; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+  .mclose { position: absolute; top: 12px; right: 14px; background: transparent; border: none; color: #6b7b6e; font-size: 18px; cursor: pointer; font-family: inherit; }
+  .mtitle { background: rgba(26,58,107,0.4); border: 1px solid rgba(100,149,237,0.35); border-radius: 8px; padding: 8px 12px; font-size: 13px; color: #a7c4f3; text-align: center; margin-bottom: 12px; }
+  .msearch { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 14px; color: #faf7f0; font-size: 14px; font-family: inherit; outline: none; width: 100%; margin-bottom: 10px; }
+  .mlist { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+  .mitem { padding: 9px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; color: #faf7f0; }
+  .mitem:hover { background: rgba(100,149,237,0.12); }
+  .mitem.sel { background: rgba(100,149,237,0.22); border: 1px solid rgba(100,149,237,0.45); }
+  .mconfirm { background: linear-gradient(135deg, #1a3a6b, #2a5aab); border: none; color: #fff; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 10px; width: 100%; }
+  .mconfirm:disabled { background: rgba(255,255,255,0.06); color: #6b7b6e; cursor: not-allowed; }
+
+  .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; gap: 10px; color: #6b7b6e; font-size: 15px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span style="font-size:28px">🏌️</span>
+    <div>
+      <div class="logo-title">The Open Championship 2026</div>
+      <div class="logo-sub">Fantasy Draft · Royal Birkdale</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="share-btn" id="shareBtn" onclick="copyLink()">🔗 Share Link</button>
+  </div>
+</div>
+
+<div id="clockBar" style="display:none" class="clock-bar">
+  <div class="clock-left">
+    <span class="clock-dot"></span>
+    <span class="clock-label">ON THE CLOCK</span>
+    <span class="clock-team" id="clockTeam"></span>
+    <span class="clock-info" id="clockInfo"></span>
+  </div>
+  <div class="clock-right">
+    <a id="notifyBtn" href="#" class="notify-link">📲 Notify Group</a>
+    <button class="pick-btn" onclick="openPicker()">Make Pick</button>
+  </div>
+</div>
+
+<div id="doneBanner" style="display:none" class="done-banner">🏆 Draft Complete! Tournament starts Thursday — check the Scoreboard tab for live scores.</div>
+<div id="smsBar" style="display:none" class="sms-bar"></div>
+
+<div class="tabs">
+  <button class="tab active" id="t-scoreboard" onclick="showTab('scoreboard')">🏆 Scoreboard</button>
+  <button class="tab" id="t-board" onclick="showTab('board')">📋 Draft Board</button>
+  <button class="tab" id="t-rosters" onclick="showTab('rosters')">👥 Rosters</button>
+  <button class="tab" id="t-rules" onclick="showTab('rules')">📜 Rules</button>
+</div>
+
+<div id="scoreboard" class="panel active">
+  <div class="legend">
+    <span><span class="green">●</span> Counts toward team score (top 4)</span>
+    <span><span class="mc">MC</span> Missed cut</span>
+    <span>⚠️ Needs 4 to make cut</span>
+    <span>🏆 +BONUS = -2 after tournament ends</span>
+  </div>
+  <div class="score-grid" id="scoreGrid"><div class="loading"><div>🏌️</div><div>Scores load once tournament begins Thursday</div></div></div>
+  <div class="sfooter">Scores auto-refresh every 30 seconds · Winner bonus (-2) applied manually after tournament</div>
+</div>
+
+<div id="board" class="panel">
+  <div class="twrap"><table id="draftTable"><tr><td><div class="loading">Loading...</div></td></tr></table></div>
+</div>
+
+<div id="rosters" class="panel">
+  <div class="rgrid" id="rostersGrid"><div class="loading">Loading...</div></div>
+</div>
+
+<div id="rules" class="panel">
+  <div class="rwrap">
+    <div class="rulecard">
+      <div class="ruletitle">📜 League Rules</div>
+      <div class="ruleitem"><span class="ricon">⛳</span><div><div class="rheading">Scoring</div><div class="rtext">Your top 4 golfer scores count toward your team total. Lowest combined score wins.</div></div></div>
+      <div class="ruleitem"><span class="ricon">✂️</span><div><div class="rheading">Cut Rule</div><div class="rtext">You must have at least 4 players make the cut to be eligible to win.</div></div></div>
+      <div class="ruleitem"><span class="ricon">🏆</span><div><div class="rheading">Winner Bonus</div><div class="rtext">If your team includes the tournament winner, you receive an additional -2 strokes applied to your score.</div></div></div>
+      <div class="ruleitem"><span class="ricon">💰</span><div><div class="rheading">Payouts</div><div class="rtext">Entry fee is $75 per team. 1st place takes the pot. 2nd place gets their money back.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="pickerOverlay" class="overlay" style="display:none" onclick="closePicker()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="mclose" onclick="closePicker()">✕</button>
+    <div class="mtitle" id="pickerTitle">ON THE CLOCK</div>
+    <input class="msearch" id="msearch" placeholder="Search golfers…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="filterList()" />
+    <div class="mlist" id="mlist"></div>
+    <button class="mconfirm" id="mconfirm" disabled onclick="confirmPick()">Select a golfer above</button>
+  </div>
+</div>
+
+<script>
+// ── FIELD ─────────────────────────────────────────────────────────────────────
+const GOLFERS = [
+  "Scottie Scheffler","Rory McIlroy","Tommy Fleetwood","Matt Fitzpatrick",
+  "Xander Schauffele","Jon Rahm","Collin Morikawa","Tyrrell Hatton",
+  "Shane Lowry","Viktor Hovland","Ludvig Aberg","Robert MacIntyre",
+  "Justin Thomas","Jordan Spieth","Brooks Koepka","Bryson DeChambeau",
+  "Patrick Cantlay","Sam Burns","Chris Gotterup","Tom Kim",
+  "Aaron Rai","Harris English","Russell Henley","Keegan Bradley",
+  "Sepp Straka","Akshay Bhatia","Corey Conners","Min Woo Lee",
+  "Sungjae Im","Hideki Matsuyama","Adam Scott","Justin Rose",
+  "J.J. Spaun","Wyndham Clark","Max Homa","Cameron Young",
+  "Sahith Theegala","Ben Griffin","Cameron Smith","Joaquin Niemann",
+  "Tony Finau","Dustin Johnson","Jason Day","Billy Horschel",
+  "Rickie Fowler","Nick Taylor","Alex Noren","Daniel Berger",
+  "Brian Harman","Eric Cole","J.T. Poston","Nicolai Hojgaard",
+  "Rasmus Hojgaard","Haotong Li","Kristoffer Reitan","Marco Penge",
+  "Jordan Smith","Daniel Brown","Daniel Hillier","John Parry",
+  "Rasmus Neergaard-Petersen","Adrien Saddier","Laurie Canter",
+  "Andy Sullivan","Matt Wallace","Ryo Hisatsune","Tom McKibbin",
+  "Eugenio Chacarra","Padraig Harrington","Stewart Cink","David Duval",
+  "Darren Clarke","Lee Westwood","Ian Poulter","Ernie Els",
+  "Ben Polland","Harry Hall","Jacob Bridgeman","Maverick McNealy",
+  "Andrew Novak","Patrick Reed","Denny McCarthy","Kurt Kitayama",
+  "Si Woo Kim","Davis Riley","Emiliano Grillo","Thomas Detry",
+  "Alex Smalley","Taylor Pendrith","Ryan Fox","Garrick Higgo",
+  "Lucas Glover","Bud Cauley","Sam Stevens","Max Greyserman",
+  "Victor Perez","Michael Thorbjornsen","Johnny Keefer","Joe Dean",
+  "Matti Schmid","Keita Nakajima","Kazuki Higa","Angel Ayora",
+  "Christiaan Bezuidenhout","Aldrich Potgieter","Grant Forrest",
+  "Ewen Ferguson","David Law","Connor Syme","Pablo Larrazabal",
+  "Adrian Meronk","Thriston Lawrence","M.J. Daffue","Lev Grinberg",
+  "Martin Couvra","Joakim Lagergren","Edoardo Molinari",
+  "Callum Shinkwin","Marcus Armitage","Richard Bland","Jake Knapp",
+  "Alex Fitzpatrick","Austin Smotherman","Peter Malnati","Jimmy Walker",
+];
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const TOTAL_TEAMS = 11;
+const TOTAL_ROUNDS = 6;
+const TOTAL_PICKS = TOTAL_TEAMS * TOTAL_ROUNDS;
+const ESPN_URL = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
+
+// ── STATE (stored in URL hash) ────────────────────────────────────────────────
+let state = { teams: [], picks: [], setupDone: false };
+let scoreData = {};
+let winnerBonus = {};
+let selectedGolfer = null;
+
+// ── URL STATE ─────────────────────────────────────────────────────────────────
+function saveState() {
+  try {
+    window.location.hash = btoa(encodeURIComponent(JSON.stringify(state)));
+  } catch(e) {}
+}
+
+function loadState() {
+  try {
+    if (window.location.hash && window.location.hash.length > 1) {
+      const decoded = JSON.parse(decodeURIComponent(atob(window.location.hash.slice(1))));
+      if (decoded && decoded.teams) { state = decoded; return true; }
+    }
+  } catch(e) {}
+  return false;
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function getTeamForPick(i) {
+  const r = Math.floor(i / TOTAL_TEAMS), p = i % TOTAL_TEAMS;
+  return r % 2 === 0 ? p : TOTAL_TEAMS - 1 - p;
+}
+function getRound(i) { return Math.floor(i / TOTAL_TEAMS) + 1; }
+
+function fmtScore(s) {
+  if (s === null || s === undefined) return '–';
+  if (s === 0) return 'E';
+  return s > 0 ? '+' + s : '' + s;
+}
+function scoreClass(s) {
+  if (s === null || s === undefined) return '';
+  return s < 0 ? 'green' : s > 0 ? 'red' : '';
+}
+function norm(name) {
+  return name.toLowerCase()
+    .replace(/\./g,'').replace(/\s+/g,' ')
+    .replace(/\u00f8/g,'o').replace(/\u00e5/g,'a').replace(/\u00e6/g,'ae')
+    .replace(/\u00e9/g,'e').replace(/\u00e1/g,'a').replace(/\u00ed/g,'i')
+    .replace(/\u00f3/g,'o').replace(/\u00fa/g,'u').replace(/\u00f1/g,'n')
+    .replace(/\u00fc/g,'u').replace(/\u00f6/g,'o').replace(/\u00e4/g,'a')
+    .trim();
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('t-' + id).classList.add('active');
+}
+
+// ── SHARE ─────────────────────────────────────────────────────────────────────
+function copyLink() {
+  saveState();
+  navigator.clipboard.writeText(window.location.href);
+  const btn = document.getElementById('shareBtn');
+  btn.textContent = '✓ Copied!'; btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = '🔗 Share Link'; btn.classList.remove('copied'); }, 2000);
+}
+
+// ── SETUP ─────────────────────────────────────────────────────────────────────
+function setup() {
+  const names = [];
+  for (let i = 1; i <= TOTAL_TEAMS; i++) {
+    const n = prompt(`Enter name for Team ${i} of ${TOTAL_TEAMS}:`);
+    if (!n) { alert('Setup cancelled.'); return; }
+    names.push(n.trim());
+  }
+  state = { teams: names.map((name, i) => ({ id: i, name })), picks: [], setupDone: true };
+  saveState();
+  render();
+}
+
+// ── CLOCK BAR ─────────────────────────────────────────────────────────────────
+function updateClock() {
+  const idx = state.picks.length;
+  const done = idx >= TOTAL_PICKS;
+  document.getElementById('clockBar').style.display = done ? 'none' : 'flex';
+  document.getElementById('doneBanner').style.display = done ? 'block' : 'none';
+  if (!done) {
+    const team = state.teams[getTeamForPick(idx)];
+    document.getElementById('clockTeam').textContent = team.name;
+    document.getElementById('clockInfo').textContent = 'Round ' + getRound(idx) + ' · Pick ' + (idx + 1) + ' of ' + TOTAL_PICKS;
+    const msg = encodeURIComponent('🏌️ ' + team.name + ' is on the clock! Pick ' + (idx+1) + ' of ' + TOTAL_PICKS + ' — The Open Championship 2026 Fantasy Draft. Round ' + getRound(idx) + '.');
+    document.getElementById('notifyBtn').href = 'sms:&body=' + msg;
+  }
+}
+
+// ── PICKER ────────────────────────────────────────────────────────────────────
+function openPicker() {
+  const idx = state.picks.length;
+  const team = state.teams[getTeamForPick(idx)];
+  document.getElementById('pickerTitle').textContent = '🔔 ON THE CLOCK: ' + team.name;
+  selectedGolfer = null;
+  document.getElementById('mconfirm').disabled = true;
+  document.getElementById('mconfirm').textContent = 'Select a golfer above';
+  document.getElementById('msearch').value = '';
+  filterList();
+  document.getElementById('pickerOverlay').style.display = 'flex';
+  document.getElementById('msearch').focus();
+}
+function closePicker() { document.getElementById('pickerOverlay').style.display = 'none'; }
+
+function filterList() {
+  const q = document.getElementById('msearch').value.toLowerCase();
+  const picked = new Set(state.picks.map(p => p.golfer));
+  const avail = GOLFERS.filter(g => !picked.has(g) && g.toLowerCase().includes(q));
+  document.getElementById('mlist').innerHTML = avail.map(g =>
+    `<div class="mitem${selectedGolfer===g?' sel':''}" onclick="selectG('${g.replace(/'/g,"\\'")}')">${g}</div>`
+  ).join('');
+}
+
+function selectG(name) {
+  selectedGolfer = name;
+  const btn = document.getElementById('mconfirm');
+  btn.disabled = false; btn.textContent = '✓ Confirm: ' + name;
+  filterList();
+}
+
+function confirmPick() {
+  if (!selectedGolfer) return;
+  const idx = state.picks.length;
+  if (idx >= TOTAL_PICKS) return;
+  state.picks.push({ pickNumber: idx+1, teamId: getTeamForPick(idx), golfer: selectedGolfer, ts: Date.now() });
+  closePicker();
+  saveState();
+  // On-deck SMS
+  const next = idx + 1;
+  if (next < TOTAL_PICKS) {
+    const nt = state.teams[getTeamForPick(next)];
+    const msg = encodeURIComponent('⛳ ' + nt.name + ' is on deck — The Open 2026 Fantasy Draft! Get ready!');
+    const bar = document.getElementById('smsBar');
+    bar.innerHTML = `<span><strong>${nt.name}</strong> is on deck — notify the group?</span>
+      <a href="sms:&body=${msg}" class="sms-open">📲 Open Group Text</a>
+      <button class="sms-x" onclick="this.parentElement.style.display='none'">✕</button>`;
+    bar.style.display = 'flex';
+  }
+  render();
+}
+
+// ── SCORES ────────────────────────────────────────────────────────────────────
+async function loadScores() {
+  try {
+    const res = await fetch(ESPN_URL);
+    const data = await res.json();
+    const competitors = data?.events?.[0]?.competitions?.[0]?.competitors || [];
+    const scores = {};
+    competitors.forEach(c => {
+      const key = norm(c.athlete?.displayName || '');
+      const sv = c.score;
+      let score = null;
+      if (sv === 'E' || sv === 'Even') score = 0;
+      else if (sv) { const n = parseInt(sv, 10); if (!isNaN(n)) score = n; }
+      const sn = c.status?.type?.name || '';
+      const sd = c.status?.type?.description || '';
+      let thru = '--';
+      const ls = c.linescores || [];
+      for (let i = ls.length-1; i >= 0; i--) {
+        if (ls[i].linescores && ls[i].linescores.length > 0) {
+          const h = ls[i].linescores.length;
+          thru = h === 18 ? 'F' + (i > 0 ? ' R'+(i+1) : '') : 'Thru ' + h;
+          break;
+        }
+      }
+      scores[key] = { score, missedCut: sn.includes('CUT')||sn.includes('MISSED'), withdrawn: sn.includes('WD')||sn.includes('WITHDRAWN'), thru, pos: c.status?.position?.displayValue || '' };
+    });
+    scoreData = scores;
+    renderScoreboard();
+  } catch(e) {}
+}
+
+// ── RENDER SCOREBOARD ─────────────────────────────────────────────────────────
+function renderScoreboard() {
+  const teams = state.teams.map(team => {
+    const picks = state.picks.filter(p => p.teamId === team.id);
+    const golfers = picks.map(pick => {
+      const n = norm(pick.golfer);
+      let d = scoreData[n];
+      if (!d) { const k = Object.keys(scoreData).find(k => k.includes(n)||n.includes(k)); d = k ? scoreData[k] : null; }
+      return { name: pick.golfer, score: d?.score ?? null, mc: d?.missedCut||false, wd: d?.withdrawn||false, thru: d?.thru||'--', pos: d?.pos||'' };
+    });
+    const active = golfers.filter(g => !g.mc && !g.wd && g.score !== null).sort((a,b)=>a.score-b.score);
+    const nosc = golfers.filter(g => !g.mc && !g.wd && g.score === null);
+    const mc = golfers.filter(g => g.mc || g.wd);
+    const sorted = [...active, ...nosc, ...mc];
+    const top4 = active.slice(0,4);
+    const top4names = new Set(top4.map(g=>g.name));
+    sorted.forEach(g => g.counts = top4names.has(g.name));
+    const base = top4.length > 0 ? top4.reduce((s,g)=>s+g.score,0) : null;
+    const bonus = winnerBonus[team.id] ? -2 : 0;
+    const total = base !== null ? base + bonus : null;
+    return { id: team.id, name: team.name, golfers: sorted, total, ok4cut: golfers.filter(g=>!g.mc&&!g.wd).length >= 4, hasBonus: !!winnerBonus[team.id] };
+  });
+
+  const sorted = [...teams].sort((a,b) => {
+    if (a.total===null&&b.total===null) return 0;
+    if (a.total===null) return 1; if (b.total===null) return -1;
+    return a.total - b.total;
+  });
+
+  const m = ['🏆','🥈','🥉'];
+  document.getElementById('scoreGrid').innerHTML = sorted.map((t,i) => `
+    <div class="card ${i===0?'first':''}">
+      <div class="card-hdr">
+        <div class="rank">${m[i]||'#'+(i+1)}</div>
+        <div class="tmeta">
+          <div class="tname">${t.name}</div>
+          ${!t.ok4cut?'<div class="cut-warn">⚠️ Needs 4 to make cut</div>':''}
+        </div>
+        <div class="sbox">
+          <div class="tscore ${scoreClass(t.total)}">${fmtScore(t.total)}</div>
+          <div class="slabel">TOP 4</div>
+          <button class="bonus-btn ${t.hasBonus?'on':''}" onclick="toggleBonus('${t.id}')">🏆 ${t.hasBonus?'-2 ON':'+BONUS'}</button>
+        </div>
+      </div>
+      <div class="grows">
+        ${t.golfers.map(g=>`
+          <div class="grow ${g.counts?'counts':''} ${g.mc||g.wd?'faded':''}">
+            <div class="gleft">${g.counts?'<span class="cdot">●</span>':''}<span>${g.name}</span></div>
+            <div class="gright">
+              ${g.mc?'<span class="mc">MC</span>':g.wd?'<span class="wd">WD</span>':`<span class="gscore ${scoreClass(g.score)}">${fmtScore(g.score)}</span><span class="gthru">${g.thru}</span>${g.pos?'<span class="gpos">'+g.pos+'</span>':''}`}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function toggleBonus(id) { winnerBonus[id] = !winnerBonus[id]; renderScoreboard(); }
+
+// ── RENDER BOARD ──────────────────────────────────────────────────────────────
+function renderBoard() {
+  const { teams, picks } = state;
+  const idx = picks.length;
+  const order = Array.from({length:TOTAL_PICKS},(_,i)=>({ n:i+1, r:getRound(i), t:getTeamForPick(i) }));
+  let h = '<tr><th class="rdh">Rd</th>' + teams.map(t=>`<th>${t.name}</th>`).join('') + '</tr>';
+  for (let r=0; r<TOTAL_ROUNDS; r++) {
+    h += `<tr><td style="color:#6b7b6e;font-weight:700;text-align:center;padding:6px">${r+1}</td>`;
+    const rs = order.filter(o=>o.r===r+1);
+    teams.forEach(team => {
+      const slot = rs.find(o=>o.t===team.id);
+      const pick = slot ? picks.find(p=>p.pickNumber===slot.n) : null;
+      const cur = slot && slot.n === idx+1;
+      h += pick ? `<td class="filled"><span class="pname">${pick.golfer}</span></td>`
+                : cur ? `<td class="onclock"><span style="color:#6495ed;font-size:13px">●</span></td>`
+                : `<td><span class="emp">—</span></td>`;
+    });
+    h += '</tr>';
+  }
+  document.getElementById('draftTable').innerHTML = h;
+}
+
+// ── RENDER ROSTERS ────────────────────────────────────────────────────────────
+function renderRosters() {
+  document.getElementById('rostersGrid').innerHTML = state.teams.map((team,i) => {
+    const tp = state.picks.filter(p=>p.teamId===team.id);
+    return `<div class="rcard">
+      <div class="rhdr"><span class="rnum">#${i+1}</span><span class="rname">${team.name}</span><span class="rcnt">${tp.length} picks</span></div>
+      <div class="rpicks">${tp.length===0?'<span style="color:#6b7b6e;font-size:12px;font-style:italic">No picks yet</span>':
+        tp.map(p=>`<div class="rpick"><span class="prd">R${getRound(p.pickNumber-1)}</span><span class="pgolfer">${p.golfer}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── MAIN RENDER ───────────────────────────────────────────────────────────────
+function render() {
+  updateClock();
+  renderBoard();
+  renderRosters();
+  renderScoreboard();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+if (!loadState() || !state.setupDone) {
+  // Show setup prompt
+  const doSetup = confirm('Welcome to The Open Championship 2026 Fantasy Draft!\n\nClick OK to set up team names, or Cancel if you\'re joining an existing draft (get the link from the commissioner).');
+  if (doSetup) setup();
+} else {
+  render();
+}
+
+loadScores();
+setInterval(loadScores, 30000);
+</script>
+</body>
+</html>
