@@ -437,10 +437,11 @@ async function loadState() {
   try {
     const res = await fetch(DRAFT_PATH);
     const data = await res.json();
-    if (data && data.teams) {
+    console.log('Firebase data:', JSON.stringify(data).slice(0, 200));
+    if (data && data.setupDone) {
       if (data.picks && !Array.isArray(data.picks)) data.picks = Object.values(data.picks);
-      if (data.teams && !Array.isArray(data.teams)) data.teams = Object.values(data.teams);
       if (!data.picks) data.picks = [];
+      if (data.teams && !Array.isArray(data.teams)) data.teams = Object.values(data.teams);
       state = data;
       return true;
     }
