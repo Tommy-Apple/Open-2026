@@ -409,31 +409,42 @@ const GOLFERS = [
 ];
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
+const FIREBASE_URL = "https://theopen-2026-default-rtdb.firebaseio.com";
+const DRAFT_PATH = FIREBASE_URL + "/open-draft-2026.json";
 const TOTAL_TEAMS = 11;
 const TOTAL_ROUNDS = 6;
 const TOTAL_PICKS = TOTAL_TEAMS * TOTAL_ROUNDS;
 const ESPN_URL = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
 
-// ── STATE (stored in URL hash) ────────────────────────────────────────────────
+// ── STATE ─────────────────────────────────────────────────────────────────────
 let state = { teams: [], picks: [], setupDone: false };
 let scoreData = {};
 let winnerBonus = {};
 let selectedGolfer = null;
 
-// ── URL STATE ─────────────────────────────────────────────────────────────────
-function saveState() {
+// ── FIREBASE ──────────────────────────────────────────────────────────────────
+async function saveState() {
   try {
-    window.location.hash = btoa(encodeURIComponent(JSON.stringify(state)));
-  } catch(e) {}
+    await fetch(DRAFT_PATH, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state),
+    });
+  } catch(e) { console.error('Save error:', e); }
 }
 
-function loadState() {
+async function loadState() {
   try {
-    if (window.location.hash && window.location.hash.length > 1) {
-      const decoded = JSON.parse(decodeURIComponent(atob(window.location.hash.slice(1))));
-      if (decoded && decoded.teams) { state = decoded; return true; }
+    const res = await fetch(DRAFT_PATH);
+    const data = await res.json();
+    if (data && data.teams) {
+      if (data.picks && !Array.isArray(data.picks)) data.picks = Object.values(data.picks);
+      if (data.teams && !Array.isArray(data.teams)) data.teams = Object.values(data.teams);
+      if (!data.picks) data.picks = [];
+      state = data;
+      return true;
     }
-  } catch(e) {}
+  } catch(e) { console.error('Load error:', e); }
   return false;
 }
 
@@ -473,7 +484,6 @@ function showTab(id) {
 
 // ── SHARE ─────────────────────────────────────────────────────────────────────
 function copyLink() {
-  saveState();
   navigator.clipboard.writeText(window.location.href);
   const btn = document.getElementById('shareBtn');
   btn.textContent = '✓ Copied!'; btn.classList.add('copied');
@@ -481,7 +491,7 @@ function copyLink() {
 }
 
 // ── SETUP ─────────────────────────────────────────────────────────────────────
-function setup() {
+async function setup() {
   const names = [];
   for (let i = 1; i <= TOTAL_TEAMS; i++) {
     const n = prompt(`Enter name for Team ${i} of ${TOTAL_TEAMS}:`);
@@ -489,7 +499,7 @@ function setup() {
     names.push(n.trim());
   }
   state = { teams: names.map((name, i) => ({ id: i, name })), picks: [], setupDone: true };
-  saveState();
+  await saveState();
   render();
 }
 
@@ -545,7 +555,7 @@ function confirmPick() {
   if (idx >= TOTAL_PICKS) return;
   state.picks.push({ pickNumber: idx+1, teamId: getTeamForPick(idx), golfer: selectedGolfer, ts: Date.now() });
   closePicker();
-  saveState();
+  saveState(); // async, fires in background
   // On-deck SMS
   const next = idx + 1;
   if (next < TOTAL_PICKS) {
@@ -693,16 +703,27 @@ function render() {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-if (!loadState() || !state.setupDone) {
-  // Show setup prompt
-  const doSetup = confirm('Welcome to The Open Championship 2026 Fantasy Draft!\n\nClick OK to set up team names, or Cancel if you\'re joining an existing draft (get the link from the commissioner).');
-  if (doSetup) setup();
-} else {
-  render();
+// Poll Firebase for live draft updates every 5 seconds
+async function pollDraft() {
+  const had = state.picks.length;
+  await loadState();
+  if (state.picks.length !== had) render();
 }
 
-loadScores();
-setInterval(loadScores, 30000);
+async function init() {
+  const loaded = await loadState();
+  if (!loaded || !state.setupDone) {
+    const doSetup = confirm('Welcome to The Open Championship 2026 Fantasy Draft!\n\nClick OK to set up team names, or Cancel if you\'re joining an existing draft (your commissioner will share the URL).');
+    if (doSetup) await setup();
+  } else {
+    render();
+  }
+  loadScores();
+  setInterval(loadScores, 30000);
+  setInterval(pollDraft, 5000);
+}
+
+init();
 </script>
 </body>
 </html>
